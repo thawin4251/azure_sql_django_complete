@@ -84,3 +84,73 @@ It manages two main resources:
     *   A: For modularity. If we had multiple apps, we'd want each to manage its own URLs.
 *   **Q: What is `venv`?**
     *   A: It isolates this project's Python libraries from the rest of your system.
+
+## 5. MongoDB Integration
+
+This project is set up to use MongoDB for storing certain data (like product reviews or logs), demonstrating a hybrid SQL/NoSQL architecture.
+
+### A. Local Setup (Development)
+
+1.  **Install MongoDB**: Download and install MongoDB Community Server for your OS.
+2.  **Start MongoDB**: Run the MongoDB server (usually `mongod` or via a service).
+3.  **Configure `settings.py`**:
+    *   In `azure_project/settings.py`, ensure the local `MONGO_URI` is active and the Azure one is commented out for local development.
+    *   ```python
+        # Local Development
+        MONGO_URI = 'mongodb://localhost:27017/'
+        MONGO_DB_NAME = 'django_store_reviews'
+        ```
+4.  **Verify**: You can use tools like **MongoDB Compass** to connect to `mongodb://localhost:27017/` and view your data.
+
+### B. Azure Cosmos DB for MongoDB (Production)
+
+To run this in the cloud, we use Azure Cosmos DB (API for MongoDB).
+
+1.  **Create Resource**: Create a "Azure Cosmos DB for MongoDB" resource in the Azure Portal (vCore or Request Unit based).
+2.  **Get Connection String**:
+    *   Go to **Settings** > **Connection strings**.
+    *   Copy the Primary Connection String.
+3.  **Update `settings.py`** (or use Environment Variables):
+    *   In a real production environment, **NEVER** commit secrets to code.
+    *   For this teaching demo, we show where it goes:
+        ```python
+        # Production (Azure Cosmos DB)
+        mongo_username = urllib.parse.quote_plus('your_username')
+        mongo_password = urllib.parse.quote_plus('your_password')
+        MONGO_URI = f'mongodb+srv://{mongo_username}:{mongo_password}@your-cluster.mongocluster.cosmos.azure.com/...'
+        ```
+
+### C. The Connection Code (`api/mongo_utils.py`)
+Show students the helper function `get_db_handle()` in `api/mongo_utils.py`. It uses the `pymongo` library to create a client based on the settings.
+
+## 6. Azure Deployment via GitHub Actions
+
+We use **GitHub Actions** for Continuous Deployment (CD). Every time you push to the `main` branch, the code is automatically deployed to Azure App Service.
+
+### A. The Workflow File
+Show `.github/workflows/main_bearlab-backend.yml`.
+
+*   **Trigger**: `on: push: branches: [ main ]` - Runs when code is pushed to main.
+*   **Build Job**: Sets up Python, installs dependencies (optional step for verification).
+*   **Deploy Job**:
+    *   `azure/login`: Authenticates with Azure using a Service Principal (stored in GitHub Secrets).
+    *   `azure/webapps-deploy`: Copies the code to your Azure App Service.
+
+### B. Setting Up Secrets
+For the action to assume identity and deploy, we need secrets in the GitHub Repository (**Settings > Secrets and variables > Actions**):
+*   `AZUREAPPSERVICE_CLIENTID_...`
+*   `AZUREAPPSERVICE_TENANTID_...`
+*   `AZUREAPPSERVICE_SUBSCRIPTIONID_...`
+
+*Note: These are usually automatically created if you set up deployment via the Azure Portal "Deployment Center".*
+
+### C. Connecting App Service to Databases
+The deployed code needs to know how to connect to Azure SQL and Cosmos DB. We **do not** hardcode these in `settings.py` for production safety.
+
+1.  Go to your **App Service** in Azure Portal.
+2.  Select **Settings** > **Environment variables**.
+3.  Add the new settings:
+    *   `MONGO_URI`: Your Cosmos DB connection string.
+    *   `MONGO_DB_NAME`: `django_store_reviews`
+    *   *(And any SQL settings if you converted them to env vars)*
+4.  **Save** and **Restart** the app.
