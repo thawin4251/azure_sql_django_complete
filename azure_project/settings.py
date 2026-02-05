@@ -81,17 +81,16 @@ WSGI_APPLICATION = 'azure_project.wsgi.application'
 DATABASES = {
      'default': {
          'ENGINE': 'mssql',
-        'NAME': 'free-sql-db-2552014',
-        'USER': 'peach0978',
-        'PASSWORD': 'Super0929014251.',
-        'HOST': 'peach0978.database.windows.net',
+        'NAME': 'free-sql-db-6524109',
+        'USER': 'super',
+        'PASSWORD': 'Tawin0929014251.',
+        'HOST': 'super0978.database.windows.net',
          'PORT': '1433',
         'OPTIONS': {
             'driver': 'ODBC Driver 18 for SQL Server',
          },
     },
  }
-
 
 
 import urllib.parse
